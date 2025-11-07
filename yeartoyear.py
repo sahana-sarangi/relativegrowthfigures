@@ -23,23 +23,10 @@ data.years = data.years.astype(int)
 data = data.rename(columns={"years": "Year"})
 '''
 astro_url = "https://drive.google.com/uc?export=download&id=1GySlfSGMIt0LZb_XCgP29DaqPL2aCISI"
+data = pd.read_csv(astro_url, index_col=0)
 
-data = pd.read_csv(astro_url)
-
-
-if 'years' not in data.columns and data.index.name == 'years':
-    data = data.reset_index()
-
-
-data.columns = data.columns.str.strip().str.lower()
-
-
-if 'years' not in data.columns:
-    raise ValueError(f"'years' column still missing — columns found: {data.columns.tolist()}")
-
-
-data['years'] = data['years'].fillna(0).astype(int)
-data = data.rename(columns={"years": "Year"})
+st.write("Columns in astro CSV:", data.columns.tolist())
+st.write("First few rows:", data.head())
 
 
 
