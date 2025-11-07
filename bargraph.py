@@ -30,6 +30,9 @@ if "Topic (Post Forced)" not in bt60_names.columns:
     bt60_names["Topic (Post Forced)"] = 0
 bt60_names["Topic (Post Forced)"] = bt60_names["Topic (Post Forced)"].fillna(0).astype(int)
 
+print("df columns:", df.columns.tolist())
+print("bt60_names columns:", bt60_names.columns.tolist())
+
 df = pd.merge(
     df,
     bt60_names[["AbstractTitle", "GPT_Names", "Topic (Post Forced)"]],
