@@ -64,11 +64,12 @@ bar_data["Color"] = colors
 
 bar_chart = alt.Chart(bar_data).mark_bar().encode(
     x=alt.X('OrderRank:O', title='Topics', axis=alt.Axis(labels=False, ticks=False)),
-    y=alt.Y('TotalChange:Q', title='Total Change in Abstracts'),
-    color=alt.Color('Color:N', scale=None),
+    y=alt.Y('TotalChange:Q', title='Total Abstract Change'),
+    color=alt.Color('OrderRank:O', scale=alt.Scale(scheme='rainbow')),
     tooltip=[alt.Tooltip('TopicName:N', title='Topic'),
              alt.Tooltip('TotalChange:Q', title='Total Change')]
 )
+
 
 
 growth_text = alt.Chart(bar_data).mark_text(
