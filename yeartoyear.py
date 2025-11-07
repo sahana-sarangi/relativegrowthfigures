@@ -95,7 +95,7 @@ final_chart = (
         color=alt.Color(
             "RelativeGrowthRate:Q",
             scale=color_scale,
-            title="Avg. Year-to-Year Growth (% per year)",
+            title="Avg Year to Year Growth (% per year)",
             legend=alt.Legend(
                 orient="right",
                 titleFontSize=13,
