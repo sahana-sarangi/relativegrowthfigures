@@ -121,9 +121,15 @@ tsne_url = "https://drive.google.com/uc?export=download&id=1AlqzyJQSxfK2MJGVdQri
 names_url = "https://drive.google.com/uc?export=download&id=1s6T-5KchhgOnoCX16aMYGtJ1_TiU_hqm"
 
 data = pd.read_csv(astro_url, index_col=0)
-data['years'] = data['years'].fillna(0)
-data.years = data.years.astype(int)
-data = data.rename(columns={"years": "Year"})
+
+# Automatically detect the year column
+year_cols = [c for c in data.columns if 'year' in c.lower()]
+if not year_cols:
+    raise ValueError("No year column found in astro CSV")
+year_col = year_cols[0]
+
+data[year_col] = data[year_col].fillna(0).astype(int)
+data = data.rename(columns={year_col: "Year"})
 
 df = pd.read_csv(tsne_url, encoding="utf8")
 df = df.rename(columns={
@@ -200,4 +206,3 @@ final_chart = (bar_chart + value_text + topic_labels).properties(
 )
 
 st.altair_chart(final_chart, use_container_width=True)
-
