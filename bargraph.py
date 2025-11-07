@@ -71,7 +71,6 @@ top_decline = total_growth.sort_values("TotalChange").head(10)
 bar_data = pd.concat([top_growth, top_decline])
 bar_data["Type"] = bar_data["TotalChange"].apply(lambda x: "Growth" if x >= 0 else "Decline")
 bar_data["Label"] = bar_data["TotalChange"].round(0).astype(int).astype(str)
-bar_data["LabelDy"] = bar_data["Type"].apply(lambda x: -5 if x=="Growth" else 12)  # numbers above growth bars, below decline bars
 
 bar_chart = alt.Chart(bar_data).mark_bar().encode(
     x=alt.X('TopicName:N', sort=alt.SortField(field="TotalChange", order="descending"), title='Topic'),
@@ -83,14 +82,32 @@ bar_chart = alt.Chart(bar_data).mark_bar().encode(
     ]
 )
 
-text = bar_chart.mark_text(
+
+growth_text = alt.Chart(bar_data[bar_data["Type"]=="Growth"]).mark_text(
+    dy=-5,
     color='black',
     size=12
 ).encode(
-    text='Label:N',
-    dy='LabelDy:Q'
+    x='TopicName:N',
+    y='TotalChange:Q',
+    text='Label:N'
 )
 
-final_chart = (bar_chart + text).properties(width=1000, height=500, title="Absolute Growth - Top 10 increasing and decreasing")
+
+decline_text = alt.Chart(bar_data[bar_data["Type"]=="Decline"]).mark_text(
+    dy=12,
+    color='black',
+    size=12
+).encode(
+    x='TopicName:N',
+    y='TotalChange:Q',
+    text='Label:N'
+)
+
+final_chart = (bar_chart + growth_text + decline_text).properties(
+    width=1000,
+    height=500,
+    title="Absolute Growth - Top 10 increasing and decreasing"
+)
 
 st.altair_chart(final_chart, use_container_width=True)
