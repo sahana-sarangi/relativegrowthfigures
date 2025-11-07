@@ -59,13 +59,14 @@ bar_data["Type"] = bar_data["TotalChange"].apply(lambda x: "Growth" if x >= 0 el
 bar_data["Label"] = bar_data["TotalChange"].round(0).astype(int).astype(str)
 
 bar_data = bar_data.sort_values("TotalChange", ascending=False)
-order = bar_data["TopicName"].tolist()
+bar_data["Order"] = np.arange(len(bar_data))
 
 bar_chart = alt.Chart(bar_data).mark_bar().encode(
-    x=alt.X('TopicName:N', sort=order, title='Topic'),
+    x=alt.X('TopicName:N', sort=bar_data["TopicName"].tolist(), title='Topic'),
     y=alt.Y('TotalChange:Q', title='Total Abstract Change'),
     color=alt.Color('Type:N', scale=alt.Scale(domain=["Growth", "Decline"], range=["#d73027", "#4575b4"])),
-    tooltip=[alt.Tooltip('TopicName:N', title='Topic'), alt.Tooltip('TotalChange:Q', title='Total Change', format=".0f")]
+    tooltip=[alt.Tooltip('TopicName:N', title='Topic'),
+             alt.Tooltip('TotalChange:Q', title='Total Change', format=".0f")]
 )
 
 growth_text = alt.Chart(bar_data[bar_data["Type"]=="Growth"]).mark_text(
