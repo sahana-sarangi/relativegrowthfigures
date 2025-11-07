@@ -105,10 +105,7 @@ st.altair_chart(final_chart, use_container_width=True)
 '''
 import pandas as pd
 import numpy as np
-import altair as alt
-import streamlit as st
-
-st.set_page_config(layout="wide", page_title="Top Growing and Declining Topics (Total Change)")
+import matplotlib.pyplot as plt
 
 def add_leading_zeroes(x):
     if pd.isna(x):
@@ -160,49 +157,26 @@ top_growth = total_change.sort_values("TotalChange", ascending=False).head(10)
 top_decline = total_change.sort_values("TotalChange", ascending=True).head(10)
 
 bar_data = pd.concat([top_growth, top_decline])
-bar_data["Type"] = bar_data["TotalChange"].apply(lambda x: "Growth" if x >= 0 else "Decline")
-bar_data["Label"] = bar_data["TotalChange"].round(0).astype(int).astype(str)
-
 bar_data = bar_data.sort_values("TotalChange", ascending=False).reset_index(drop=True)
-bar_data["OrderRank"] = bar_data.index
+bar_data["Type"] = bar_data["TotalChange"].apply(lambda x: "Growth" if x >= 0 else "Decline")
 
-bar_chart = alt.Chart(bar_data).mark_bar().encode(
-    x=alt.X('OrderRank:O', title='Topic', axis=alt.Axis(labels=False, ticks=False)),
-    y=alt.Y('TotalChange:Q', title='Total Abstract Change'),
-    color=alt.Color('Type:N', scale=alt.Scale(domain=["Growth", "Decline"], range=["#d73027", "#4575b4"])),
-    tooltip=[alt.Tooltip('TopicName:N', title='Topic'),
-             alt.Tooltip('TotalChange:Q', title='Total Change', format=".0f")]
-)
+colors = ['#d73027' if t=="Growth" else '#4575b4' for t in bar_data["Type"]]
+x_labels = bar_data["TopicName"]
+y_values = bar_data["TotalChange"]
 
-growth_text = alt.Chart(bar_data[bar_data["Type"]=="Growth"]).mark_text(
-    dy=-5, color='black', size=12
-).encode(
-    x='OrderRank:O',
-    y='TotalChange:Q',
-    text='Label:N'
-)
+fig, ax = plt.subplots(figsize=(16,6))
+bars = ax.bar(range(len(bar_data)), y_values, color=colors)
 
-decline_text = alt.Chart(bar_data[bar_data["Type"]=="Decline"]).mark_text(
-    dy=12, color='black', size=12
-).encode(
-    x='OrderRank:O',
-    y='TotalChange:Q',
-    text='Label:N'
-)
+for i, (y, t) in enumerate(zip(y_values, bar_data["Type"])):
+    if t == "Growth":
+        ax.text(i, y + max(y_values)*0.01, str(y), ha='center', va='bottom', fontsize=10)
+    else:
+        ax.text(i, y - max(y_values)*0.01, str(y), ha='center', va='top', fontsize=10)
 
-topic_labels = alt.Chart(bar_data).mark_text(
-    dy=10, color='black', size=12, angle=0, align='center'
-).encode(
-    x='OrderRank:O',
-    y=alt.value(0),
-    text='TopicName:N'
-)
-
-final_chart = (bar_chart + growth_text + decline_text + topic_labels).properties(
-    width=1200,
-    height=500,
-    title="Top Growing and Declining Topics (Total Abstract Change)"
-)
-
-st.altair_chart(final_chart, use_container_width=True)
-
+ax.set_xticks(range(len(bar_data)))
+ax.set_xticklabels(x_labels, rotation=45, ha='right', fontsize=10)
+ax.set_ylabel("Total Abstract Change")
+ax.set_title("Top Growing and Declining Topics (Total Abstract Change)")
+ax.grid(axis='y', linestyle='--', alpha=0.7)
+plt.tight_layout()
+plt.show()
