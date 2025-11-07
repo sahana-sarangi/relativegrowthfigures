@@ -2,8 +2,9 @@ import pandas as pd
 import numpy as np
 import altair as alt
 import streamlit as st
+import os
 
-st.set_page_config(layout="wide", page_title="Absolute Growth")
+st.set_page_config(layout="wide", page_title="Relative growth")
 
 alt.data_transformers.disable_max_rows()
 
@@ -16,7 +17,7 @@ astro_url = "https://drive.google.com/uc?export=download&id=1hmZY1_fJ157l9VVV62e
 tsne_url = "https://drive.google.com/uc?export=download&id=1hWBkhr2iQQm8hP3oa8kB_5Org40MND1s"
 names_url = "https://drive.google.com/uc?export=download&id=1_SxyudGo4_zOa-pWvd3feXJjK_cELCYz"
 
-data = pd.read_csv(astro_url)
+data = pd.read_csv(astro_url, index_col=0)
 data['years'] = data['years'].fillna(0)
 data.years = data.years.astype(int)
 data = data.rename(columns={"years": "Year"})
@@ -49,37 +50,33 @@ df = df.rename(columns={"GPT_Names": "TopicName"})
 df["TopicName"] = df["TopicName"].fillna("Topic " + df["Topic (Post Forced)"].astype(str))
 df["TopicName"] = df["TopicName"].apply(lambda x: x if len(x) <= 50 else x[:47] + "...")
 
+
 topic_growth = (
     df.groupby(["TopicName", "Year"])
     .size()
     .reset_index(name="AbstractsPerYear")
 )
 
-def calc_absolute_growth(g):
-    g = g.sort_values("Year")
-    counts = g["AbstractsPerYear"].values
-    if len(counts) < 2:
-        return 0.0
-    deltas = counts[1:] - counts[:-1]
-    return np.mean(deltas)
 
-absolute_growth = (
+growth_rates = (
     topic_growth.groupby("TopicName")
-    .apply(calc_absolute_growth)
-    .reset_index(name="RelativeGrowthRate")
+    .apply(lambda g: np.polyfit(g["Year"], g["AbstractsPerYear"], 1)[0] if len(g) > 1 else 0)
+    .reset_index(name="GrowthRate")
 )
 
-df = df.merge(absolute_growth, on="TopicName", how="left")
-df["RelativeGrowthRate"] = df["RelativeGrowthRate"].fillna(0.0)
+df = df.merge(growth_rates, on="TopicName", how="left")
+df["GrowthRate"] = df["GrowthRate"].fillna(0.0)
 
-max_abs_growth = float(np.abs(df["RelativeGrowthRate"]).max())
+
+max_abs_growth = float(np.abs(df["GrowthRate"]).max())
 if max_abs_growth == 0 or np.isclose(max_abs_growth, 0.0):
     max_abs_growth = 1e-6
 
 color_scale = alt.Scale(
     domain=[-max_abs_growth, 0.0, max_abs_growth],
-    range=["#4575b4", "#762a83", "#d73027"]
+    range=["#4575b4", "#762a83", "#d73027"],  
 )
+
 
 final_chart = (
     alt.Chart(df)
@@ -88,15 +85,15 @@ final_chart = (
         x=alt.X("TSNE-x:Q", title="t-SNE x"),
         y=alt.Y("TSNE-y:Q", title="t-SNE y"),
         color=alt.Color(
-            "RelativeGrowthRate:Q",
+            "GrowthRate:Q",
             scale=color_scale,
-            title="Avg Absolute Growth (change in abstracts per year)",
+            title="Topic Growth Rate (abstracts per year)",
             legend=alt.Legend(
                 orient="right",
+                title="Growth per Year",
                 titleFontSize=13,
                 labelFontSize=11,
                 labelLimit=250,
-                format=".1f",
                 gradientLength=200,
                 direction="vertical",
                 gradientThickness=20
@@ -105,15 +102,19 @@ final_chart = (
         tooltip=[
             alt.Tooltip("AbstractTitle:N", title="Abstract Title"),
             alt.Tooltip("TopicName:N", title="Topic Name"),
-            alt.Tooltip("RelativeGrowthRate:Q", title="Avg. #/Year", format=".2f"),
+            alt.Tooltip("GrowthRate:Q", title="Growth Rate (Δ abstracts/year)", format=".2f"),
             alt.Tooltip("Year:Q", title="Year")
         ],
     )
-    .properties(width=700, height=1000)
+    .properties(
+        width=700,
+        height=1000
+    )
     .configure_title(fontSize=18, anchor="start")
     .configure_axis(labelFontSize=12, titleFontSize=14, grid=True)
     .configure_view(strokeWidth=0)
 )
 
-st.title("Absolute Growth")
+
+st.title("Relative growth")
 st.altair_chart(final_chart, use_container_width=True)
