@@ -57,10 +57,7 @@ bar_data["OrderRank"] = bar_data.index
 bar_data["Label"] = bar_data["TotalChange"].astype(int).astype(str)
 
 
-from matplotlib import cm
-colors = [cm.rainbow(i/len(bar_data)) for i in range(len(bar_data))]
-colors = [f"rgb({int(r*255)},{int(g*255)},{int(b*255)})" for r,g,b,_ in colors]
-bar_data["Color"] = colors
+
 
 bar_chart = alt.Chart(bar_data).mark_bar().encode(
     x=alt.X('OrderRank:O', title='Topics', axis=alt.Axis(labels=False, ticks=False)),
