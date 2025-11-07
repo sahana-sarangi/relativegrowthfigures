@@ -120,9 +120,15 @@ tsne_url = "https://drive.google.com/uc?export=download&id=1AlqzyJQSxfK2MJGVdQri
 names_url = "https://drive.google.com/uc?export=download&id=1s6T-5KchhgOnoCX16aMYGtJ1_TiU_hqm"
 
 data = pd.read_csv(astro_url, index_col=0)
-data['years'] = data['years'].fillna(0)
-data.years = data.years.astype(int)
-data = data.rename(columns={"years": "Year"})
+
+
+year_col_candidates = [c for c in data.columns if "year" in c.lower()]
+if not year_col_candidates:
+    raise ValueError("No column containing 'year' found in astro CSV")
+year_col = year_col_candidates[0]
+
+data[year_col] = data[year_col].fillna(0).astype(int)
+data = data.rename(columns={year_col: "Year"})
 
 df = pd.read_csv(tsne_url, encoding="utf8")
 df = df.rename(columns={
@@ -173,16 +179,19 @@ bar_chart = alt.Chart(bar_data).mark_bar().encode(
              alt.Tooltip('TotalChange:Q', title='Total Change', format=".0f")]
 )
 
+
 value_text = alt.Chart(bar_data).mark_text(
-    dy=-5, color='black', size=12
+    color='black', size=12
 ).encode(
     x='OrderRank:O',
-    y='TotalChange:Q',
+    y=alt.Y('TotalChange:Q'),
     text='Label:N'
+).transform_calculate(
+    dy="datum.Type === 'Growth' ? -5 : 12"
 )
 
 topic_labels = alt.Chart(bar_data).mark_text(
-    dy=15, color='black', size=12, angle=45, align='right'
+    dy=20, color='black', size=12, angle=45, align='right'
 ).encode(
     x='OrderRank:O',
     y=alt.value(0),
