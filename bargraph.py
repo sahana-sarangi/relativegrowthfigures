@@ -58,11 +58,12 @@ bar_data = pd.concat([top_growth, top_decline])
 bar_data["Type"] = bar_data["TotalChange"].apply(lambda x: "Growth" if x >= 0 else "Decline")
 bar_data["Label"] = bar_data["TotalChange"].round(0).astype(int).astype(str)
 
-bar_data = bar_data.sort_values("TotalChange", ascending=False)
-bar_data["Order"] = np.arange(len(bar_data))
+# Create a rank column for explicit ordering
+bar_data = bar_data.sort_values("TotalChange", ascending=False).reset_index(drop=True)
+bar_data["OrderRank"] = bar_data.index
 
 bar_chart = alt.Chart(bar_data).mark_bar().encode(
-    x=alt.X('TopicName:N', sort=bar_data["TopicName"].tolist(), title='Topic'),
+    x=alt.X('OrderRank:O', title='Topic', axis=alt.Axis(labels=False, ticks=False)),
     y=alt.Y('TotalChange:Q', title='Total Abstract Change'),
     color=alt.Color('Type:N', scale=alt.Scale(domain=["Growth", "Decline"], range=["#d73027", "#4575b4"])),
     tooltip=[alt.Tooltip('TopicName:N', title='Topic'),
@@ -72,7 +73,7 @@ bar_chart = alt.Chart(bar_data).mark_bar().encode(
 growth_text = alt.Chart(bar_data[bar_data["Type"]=="Growth"]).mark_text(
     dy=-5, color='black', size=12
 ).encode(
-    x='TopicName:N',
+    x='OrderRank:O',
     y='TotalChange:Q',
     text='Label:N'
 )
@@ -80,12 +81,20 @@ growth_text = alt.Chart(bar_data[bar_data["Type"]=="Growth"]).mark_text(
 decline_text = alt.Chart(bar_data[bar_data["Type"]=="Decline"]).mark_text(
     dy=12, color='black', size=12
 ).encode(
-    x='TopicName:N',
+    x='OrderRank:O',
     y='TotalChange:Q',
     text='Label:N'
 )
 
-final_chart = (bar_chart + growth_text + decline_text).properties(
+topic_labels = alt.Chart(bar_data).mark_text(
+    dy=0, color='black', size=12, align='center'
+).encode(
+    x='OrderRank:O',
+    y=alt.value(-5),
+    text='TopicName:N'
+)
+
+final_chart = (bar_chart + growth_text + decline_text + topic_labels).properties(
     width=1200,
     height=500,
     title="Top Growing and Declining Topics (Total Abstract Change)"
