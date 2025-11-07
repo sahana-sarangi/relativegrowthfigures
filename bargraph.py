@@ -173,7 +173,7 @@ bar_chart = alt.Chart(bar_data).mark_bar().encode(
              alt.Tooltip('TotalChange:Q', title='Total Change', format=".0f")]
 )
 
-growth_text = alt.Chart(bar_data[bar_data["Type"]=="Growth"]).mark_text(
+value_text = alt.Chart(bar_data).mark_text(
     dy=-5, color='black', size=12
 ).encode(
     x='OrderRank:O',
@@ -181,23 +181,15 @@ growth_text = alt.Chart(bar_data[bar_data["Type"]=="Growth"]).mark_text(
     text='Label:N'
 )
 
-decline_text = alt.Chart(bar_data[bar_data["Type"]=="Decline"]).mark_text(
-    dy=12, color='black', size=12
-).encode(
-    x='OrderRank:O',
-    y='TotalChange:Q',
-    text='Label:N'
-)
-
 topic_labels = alt.Chart(bar_data).mark_text(
-    dy=10, color='black', size=12, align='center'
+    dy=15, color='black', size=12, angle=45, align='right'
 ).encode(
     x='OrderRank:O',
     y=alt.value(0),
     text='TopicName:N'
 )
 
-final_chart = (bar_chart + growth_text + decline_text + topic_labels).properties(
+final_chart = (bar_chart + value_text + topic_labels).properties(
     width=1200,
     height=500,
     title="Top Growing and Declining Topics (Total Abstract Change)"
