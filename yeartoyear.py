@@ -12,9 +12,9 @@ def add_leading_zeroes(x):
         x = 0
     return "{:02d}".format(int(x))
 
-astro_url = "https://drive.google.com/uc?export=download&id=1TNb63Oe1lWRhF1Pwv15ANzJ2Ws0mikAK"
-tsne_url = "https://drive.google.com/uc?export=download&id=1NgJdYklHvVk2JsB1FNmABF7lXZfrCXEF"
-names_url = "https://drive.google.com/uc?export=download&id=1Knk8dl5CHCJMbkx3dqBmFip_ONil-e7h"
+astro_url = "https://drive.google.com/uc?export=download&id=1hmZY1_fJ157l9VVV62ewg6NDCOU2WfUp"
+tsne_url = "https://drive.google.com/uc?export=download&id=1hWBkhr2iQQm8hP3oa8kB_5Org40MND1s"
+names_url = "https://drive.google.com/uc?export=download&id=1_SxyudGo4_zOa-pWvd3feXJjK_cELCYz"
 
 import requests
 resp = requests.get(astro_url)
