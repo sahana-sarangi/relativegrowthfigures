@@ -103,6 +103,7 @@ final_chart = (bar_chart + growth_text + decline_text + topic_labels).properties
 
 st.altair_chart(final_chart, use_container_width=True)
 '''
+
 import pandas as pd
 import numpy as np
 import altair as alt
@@ -120,15 +121,9 @@ tsne_url = "https://drive.google.com/uc?export=download&id=1AlqzyJQSxfK2MJGVdQri
 names_url = "https://drive.google.com/uc?export=download&id=1s6T-5KchhgOnoCX16aMYGtJ1_TiU_hqm"
 
 data = pd.read_csv(astro_url, index_col=0)
-
-
-year_col_candidates = [c for c in data.columns if "year" in c.lower()]
-if not year_col_candidates:
-    raise ValueError("No column containing 'year' found in astro CSV")
-year_col = year_col_candidates[0]
-
-data[year_col] = data[year_col].fillna(0).astype(int)
-data = data.rename(columns={year_col: "Year"})
+data['years'] = data['years'].fillna(0)
+data.years = data.years.astype(int)
+data = data.rename(columns={"years": "Year"})
 
 df = pd.read_csv(tsne_url, encoding="utf8")
 df = df.rename(columns={
@@ -166,9 +161,10 @@ top_growth = total_change.sort_values("TotalChange", ascending=False).head(10)
 top_decline = total_change.sort_values("TotalChange", ascending=True).head(10)
 
 bar_data = pd.concat([top_growth, top_decline])
-bar_data = bar_data.sort_values("TotalChange", ascending=False).reset_index(drop=True)
 bar_data["Type"] = bar_data["TotalChange"].apply(lambda x: "Growth" if x >= 0 else "Decline")
 bar_data["Label"] = bar_data["TotalChange"].round(0).astype(int).astype(str)
+
+bar_data = bar_data.sort_values("TotalChange", ascending=False).reset_index(drop=True)
 bar_data["OrderRank"] = bar_data.index
 
 bar_chart = alt.Chart(bar_data).mark_bar().encode(
@@ -179,19 +175,18 @@ bar_chart = alt.Chart(bar_data).mark_bar().encode(
              alt.Tooltip('TotalChange:Q', title='Total Change', format=".0f")]
 )
 
-
 value_text = alt.Chart(bar_data).mark_text(
     color='black', size=12
 ).encode(
     x='OrderRank:O',
-    y=alt.Y('TotalChange:Q'),
+    y='TotalChange:Q',
     text='Label:N'
 ).transform_calculate(
-    dy="datum.Type === 'Growth' ? -5 : 12"
+    dy="datum.Type == 'Growth' ? -5 : 12"
 )
 
 topic_labels = alt.Chart(bar_data).mark_text(
-    dy=20, color='black', size=12, angle=45, align='right'
+    dy=15, color='black', size=12, angle=45, align='right'
 ).encode(
     x='OrderRank:O',
     y=alt.value(0),
@@ -205,3 +200,4 @@ final_chart = (bar_chart + value_text + topic_labels).properties(
 )
 
 st.altair_chart(final_chart, use_container_width=True)
+
