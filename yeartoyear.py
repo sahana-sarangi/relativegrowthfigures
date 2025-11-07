@@ -16,10 +16,6 @@ astro_url = "https://drive.google.com/uc?export=download&id=1hmZY1_fJ157l9VVV62e
 tsne_url = "https://drive.google.com/uc?export=download&id=1hWBkhr2iQQm8hP3oa8kB_5Org40MND1s"
 names_url = "https://drive.google.com/uc?export=download&id=1_SxyudGo4_zOa-pWvd3feXJjK_cELCYz"
 
-import requests
-resp = requests.get(astro_url)
-st.write("Content type:", resp.headers.get("Content-Type"))
-st.write("Preview:", resp.text[:300])
 
 data = pd.read_csv(astro_url, index_col=0)
 data['years'] = data['years'].fillna(0)
