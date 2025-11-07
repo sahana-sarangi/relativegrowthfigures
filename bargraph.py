@@ -3,7 +3,7 @@ import numpy as np
 import altair as alt
 import streamlit as st
 
-st.set_page_config(layout="wide", page_title="Absolute Growth - top 10s")
+st.set_page_config(layout="wide", page_title="Absolute Growth - Top 10 increasing and decreasing")
 
 def add_leading_zeroes(x):
     if pd.isna(x):
@@ -53,47 +53,44 @@ topic_growth = (
     .reset_index(name="AbstractsPerYear")
 )
 
-def calc_absolute_growth(g):
+def calc_total_growth(g):
     g = g.sort_values("Year")
-    counts = g["AbstractsPerYear"].values
-    if len(counts) < 2:
-        return 0.0
-    deltas = counts[1:] - counts[:-1]
-    return np.mean(deltas)
+    first = g["AbstractsPerYear"].iloc[0]
+    last = g["AbstractsPerYear"].iloc[-1]
+    return last - first
 
-absolute_growth = (
+total_growth = (
     topic_growth.groupby("TopicName")
-    .apply(calc_absolute_growth)
-    .reset_index(name="AbsoluteGrowth")
+    .apply(calc_total_growth)
+    .reset_index(name="TotalChange")
 )
 
-
-top_growth = absolute_growth.sort_values("AbsoluteGrowth", ascending=False).head(10)
-top_decline = absolute_growth.sort_values("AbsoluteGrowth").head(10)
+top_growth = total_growth.sort_values("TotalChange", ascending=False).head(10)
+top_decline = total_growth.sort_values("TotalChange").head(10)
 
 bar_data = pd.concat([top_growth, top_decline])
-
-bar_data["Type"] = bar_data["AbsoluteGrowth"].apply(lambda x: "Growth" if x >= 0 else "Decline")
-bar_data["AbsoluteGrowthLabel"] = bar_data["AbsoluteGrowth"].round(1).astype(str)
+bar_data["Type"] = bar_data["TotalChange"].apply(lambda x: "Growth" if x >= 0 else "Decline")
+bar_data["Label"] = bar_data["TotalChange"].round(0).astype(int).astype(str)
+bar_data["LabelDy"] = bar_data["Type"].apply(lambda x: -5 if x=="Growth" else 12)  # numbers above growth bars, below decline bars
 
 bar_chart = alt.Chart(bar_data).mark_bar().encode(
-    x=alt.X('TopicName:N', sort=alt.SortField(field="AbsoluteGrowth", order="descending"), title='Topic'),
-    y=alt.Y('AbsoluteGrowth:Q', title='Average # Abstracts Change per Year'),
+    x=alt.X('TopicName:N', sort=alt.SortField(field="TotalChange", order="descending"), title='Topic'),
+    y=alt.Y('TotalChange:Q', title='Total Change in Abstracts'),
     color=alt.Color('Type:N', scale=alt.Scale(domain=["Growth", "Decline"], range=["#d73027", "#4575b4"])),
     tooltip=[
         alt.Tooltip('TopicName:N', title='Topic'),
-        alt.Tooltip('AbsoluteGrowth:Q', title='Avg Δ Abstracts/Year', format=".2f")
+        alt.Tooltip('TotalChange:Q', title='Total Change', format=".0f")
     ]
 )
 
 text = bar_chart.mark_text(
-    dy=-5,
     color='black',
     size=12
 ).encode(
-    text='AbsoluteGrowthLabel:N'
+    text='Label:N',
+    dy='LabelDy:Q'
 )
 
-final_chart = (bar_chart + text).properties(width=1000, height=500, title="Absolute Growth Bar Graph - top 10s")
+final_chart = (bar_chart + text).properties(width=1000, height=500, title="Absolute Growth - Top 10 increasing and decreasing")
 
 st.altair_chart(final_chart, use_container_width=True)
