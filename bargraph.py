@@ -37,8 +37,12 @@ df["Cluster"] = df["Topic (Post Forced)"].apply(add_leading_zeroes)
 bt60_names = pd.read_csv(names_url)
 bt60_names = bt60_names.rename(columns={"title": "AbstractTitle"})
 bt60_names["Topic (Post Forced)"] = bt60_names["Topic (Post Forced)"].fillna(0).astype(int)
-df = pd.merge(df, bt60_names[["AbstractTitle", "GPT_Names", "Topic (Post Forced)"]],
-              on=["AbstractTitle", "Topic (Post Forced)"], how="left")
+df = pd.merge(
+    df,
+    bt60_names[["AbstractTitle", "GPT_Names", "Topic (Post Forced)"]],
+    on=["AbstractTitle", "Topic (Post Forced)"],
+    how="left"
+)
 
 df = df.rename(columns={"GPT_Names": "TopicName"})
 df["TopicName"] = df["TopicName"].fillna("Topic " + df["Topic (Post Forced)"].astype(str))
@@ -46,58 +50,60 @@ df["TopicName"] = df["TopicName"].apply(lambda x: x if len(x) <= 50 else x[:47] 
 
 topic_growth = df.groupby(["TopicName", "Year"]).size().reset_index(name="AbstractsPerYear")
 
-def calc_total_growth(g):
+def calc_total_change(g):
     g = g.sort_values("Year")
-    first = g["AbstractsPerYear"].iloc[0]
-    last = g["AbstractsPerYear"].iloc[-1]
-    return last - first
+    return g["AbstractsPerYear"].iloc[-1] - g["AbstractsPerYear"].iloc[0]
 
-total_growth = topic_growth.groupby("TopicName").apply(calc_total_growth).reset_index(name="TotalChange")
+smoothed_growth = topic_growth.groupby("TopicName").apply(calc_total_change).reset_index(name="TotalAbstractChange")
 
-top_growth = total_growth.sort_values("TotalChange", ascending=False).head(10)
-top_decline = total_growth.sort_values("TotalChange").head(10)
+df = df.merge(smoothed_growth, on="TopicName", how="left")
+df["TotalAbstractChange"] = df["TotalAbstractChange"].fillna(0.0)
 
-bar_data = pd.concat([top_growth, top_decline])
-bar_data["Type"] = bar_data["TotalChange"].apply(lambda x: "Growth" if x >= 0 else "Decline")
-bar_data["Label"] = bar_data["TotalChange"].round(0).astype(int).astype(str)
+max_abs_change = float(np.abs(df["TotalAbstractChange"]).max())
+if max_abs_change == 0 or np.isclose(max_abs_change, 0.0):
+    max_abs_change = 1e-6
 
-order = bar_data.sort_values("TotalChange", ascending=False)["TopicName"].tolist()
-
-bar_chart = alt.Chart(bar_data).mark_bar().encode(
-    x=alt.X('TopicName:N', sort=order, title='Topic'),
-    y=alt.Y('TotalChange:Q', title='Total Abstract Change'),
-    color=alt.Color('Type:N', scale=alt.Scale(domain=["Growth", "Decline"], range=["#d73027", "#4575b4"])),
-    tooltip=[
-        alt.Tooltip('TopicName:N', title='Topic'),
-        alt.Tooltip('TotalChange:Q', title='Total Change', format=".0f")
-    ]
+color_scale = alt.Scale(
+    domain=[-max_abs_change, 0.0, max_abs_change],
+    range=["#4575b4", "#762a83", "#d73027"]
 )
 
-growth_text = alt.Chart(bar_data[bar_data["Type"]=="Growth"]).mark_text(
-    dy=-5,
-    color='black',
-    size=12
-).encode(
-    x='TopicName:N',
-    y='TotalChange:Q',
-    text='Label:N'
+final_chart = (
+    alt.Chart(df)
+    .mark_circle(size=25, opacity=0.9)
+    .encode(
+        x=alt.X("TSNE-x:Q", title="t-SNE x"),
+        y=alt.Y("TSNE-y:Q", title="t-SNE y"),
+        color=alt.Color(
+            "TotalAbstractChange:Q",
+            scale=color_scale,
+            title="Total Change in Abstracts",
+            legend=alt.Legend(
+                orient="right",
+                title="Δ Abstracts",
+                titleFontSize=13,
+                labelFontSize=11,
+                labelLimit=250,
+                format=".0f",
+                gradientLength=200,
+                direction="vertical",
+                gradientThickness=20
+            )
+        ),
+        tooltip=[
+            alt.Tooltip("AbstractTitle:N", title="Abstract Title"),
+            alt.Tooltip("TopicName:N", title="Topic Name"),
+            alt.Tooltip("TotalAbstractChange:Q", title="Total Δ Abstracts", format=".0f"),
+            alt.Tooltip("Year:Q", title="Year")
+        ],
+    )
+    .properties(width=700, height=1000)
+    .configure_title(fontSize=18, anchor="start")
+    .configure_axis(labelFontSize=12, titleFontSize=14, grid=True)
+    .configure_view(strokeWidth=0)
 )
 
-decline_text = alt.Chart(bar_data[bar_data["Type"]=="Decline"]).mark_text(
-    dy=12,
-    color='black',
-    size=12
-).encode(
-    x='TopicName:N',
-    y='TotalChange:Q',
-    text='Label:N'
-)
-
-final_chart = (bar_chart + growth_text + decline_text).properties(
-    width=1200,
-    height=500,
-    title="Absolute Growth - Top 10 increasing and decreasing"
-)
-
+st.title("Absolute Growth - Top 10 increasing and decreasing")
 st.altair_chart(final_chart, use_container_width=True)
+
 
