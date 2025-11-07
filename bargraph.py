@@ -64,7 +64,7 @@ bar_data = bar_data.sort_values("TotalChange", ascending=False)
 
 bar_chart = alt.Chart(bar_data).mark_bar().encode(
     x=alt.X('TopicName:N', sort=bar_data['TopicName'].tolist(), title='Topic'),
-    y=alt.Y('TotalChange:Q', title='Total Change in Abstracts'),
+    y=alt.Y('TotalChange:Q', title='Total Abstract Change'),
     color=alt.Color('Type:N', scale=alt.Scale(domain=["Growth", "Decline"], range=["#d73027", "#4575b4"])),
     tooltip=[
         alt.Tooltip('TopicName:N', title='Topic'),
@@ -99,3 +99,4 @@ final_chart = (bar_chart + growth_text + decline_text).properties(
 )
 
 st.altair_chart(final_chart, use_container_width=True)
+
