@@ -60,10 +60,11 @@ bar_data = pd.concat([top_growth, top_decline])
 bar_data["Type"] = bar_data["TotalChange"].apply(lambda x: "Growth" if x >= 0 else "Decline")
 bar_data["Label"] = bar_data["TotalChange"].round(0).astype(int).astype(str)
 
-bar_data = bar_data.sort_values("TotalChange", ascending=False)
+order = bar_data.sort_values("TotalChange", ascending=False)["TopicName"].tolist()
+bar_data["TopicName"] = pd.Categorical(bar_data["TopicName"], categories=order, ordered=True)
 
 bar_chart = alt.Chart(bar_data).mark_bar().encode(
-    x=alt.X('TopicName:N', sort=bar_data['TopicName'].tolist(), title='Topic'),
+    x=alt.X('TopicName:N', title='Topic'),
     y=alt.Y('TotalChange:Q', title='Total Abstract Change'),
     color=alt.Color('Type:N', scale=alt.Scale(domain=["Growth", "Decline"], range=["#d73027", "#4575b4"])),
     tooltip=[
@@ -99,4 +100,5 @@ final_chart = (bar_chart + growth_text + decline_text).properties(
 )
 
 st.altair_chart(final_chart, use_container_width=True)
+
 
