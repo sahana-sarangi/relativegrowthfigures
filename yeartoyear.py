@@ -84,20 +84,8 @@ if max_abs_growth == 0 or np.isclose(max_abs_growth, 0.0):
     max_abs_growth = 1e-6
 
 color_scale = alt.Scale(
-    domain=[
-        -max_abs_growth,
-        -0.05 * max_abs_growth,
-        0.0,
-        0.05 * max_abs_growth,
-        max_abs_growth
-    ],
-    range=[
-        "#313695",
-        "#74add1",
-        "#f7f7f7",
-        "#f46d43",
-        "#a50026"
-    ]
+    domain=[-max_abs_growth, -0.2 * max_abs_growth, 0.2 * max_abs_growth, max_abs_growth],
+    range=["#4575b4", "#762a83", "#d73027", "#f46d43"]
 )
 
 final_chart = (
