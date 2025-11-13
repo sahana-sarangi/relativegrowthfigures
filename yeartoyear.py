@@ -49,7 +49,7 @@ df = df.rename(columns={"GPT_Names": "TopicName"})
 df["TopicName"] = df["TopicName"].fillna("Topic " + df["Topic (Post Forced)"].astype(str))
 df["TopicName"] = df["TopicName"].apply(lambda x: x if len(x) <= 50 else x[:47] + "...")
 
-#remove covid 19 and breast cancer topics, outliers
+#remove covid 19 and breast cancer, outliers
 topics_to_remove = [
     "COVID-19 Impact on Radiation Oncology Practice",
     "Breast Cancer Radiotherapy Bolus Innovations"
@@ -84,8 +84,20 @@ if max_abs_growth == 0 or np.isclose(max_abs_growth, 0.0):
     max_abs_growth = 1e-6
 
 color_scale = alt.Scale(
-    domain=[-max_abs_growth, 0.0, max_abs_growth],
-    range=["#4575b4", "#762a83", "#d73027"]
+    domain=[
+        -max_abs_growth,
+        -0.05 * max_abs_growth,
+        0.0,
+        0.05 * max_abs_growth,
+        max_abs_growth
+    ],
+    range=[
+        "#313695",
+        "#74add1",
+        "#f7f7f7",
+        "#f46d43",
+        "#a50026"
+    ]
 )
 
 final_chart = (
@@ -122,5 +134,5 @@ final_chart = (
     .configure_view(strokeWidth=0)
 )
 
-st.title("Year To Year Relative")
+st.title("Year To Year Relative Growth")
 st.altair_chart(final_chart, use_container_width=True)
