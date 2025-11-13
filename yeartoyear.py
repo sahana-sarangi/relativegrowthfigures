@@ -16,15 +16,10 @@ astro_url = "https://drive.google.com/uc?export=download&id=1hmZY1_fJ157l9VVV62e
 tsne_url = "https://drive.google.com/uc?export=download&id=1hWBkhr2iQQm8hP3oa8kB_5Org40MND1s"
 names_url = "https://drive.google.com/uc?export=download&id=1_SxyudGo4_zOa-pWvd3feXJjK_cELCYz"
 
-
 data = pd.read_csv(astro_url, index_col=0)
 data['years'] = data['years'].fillna(0)
 data.years = data.years.astype(int)
 data = data.rename(columns={"years": "Year"})
-
-
-
-
 
 df = pd.read_csv(tsne_url, encoding="utf8")
 df = df.rename(columns={
@@ -53,6 +48,9 @@ df = pd.merge(
 df = df.rename(columns={"GPT_Names": "TopicName"})
 df["TopicName"] = df["TopicName"].fillna("Topic " + df["Topic (Post Forced)"].astype(str))
 df["TopicName"] = df["TopicName"].apply(lambda x: x if len(x) <= 50 else x[:47] + "...")
+
+#remove covid 19 topic
+df = df[df["TopicName"] != "COVID-19 Impact on Radiation Oncology Practice"]
 
 topic_growth = (
     df.groupby(["TopicName", "Year"])
