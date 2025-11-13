@@ -49,8 +49,12 @@ df = df.rename(columns={"GPT_Names": "TopicName"})
 df["TopicName"] = df["TopicName"].fillna("Topic " + df["Topic (Post Forced)"].astype(str))
 df["TopicName"] = df["TopicName"].apply(lambda x: x if len(x) <= 50 else x[:47] + "...")
 
-#remove covid 19 topic
-df = df[df["TopicName"] != "COVID-19 Impact on Radiation Oncology Practice"]
+#remove covid 19 and breast cancer topics, outliers
+topics_to_remove = [
+    "COVID-19 Impact on Radiation Oncology Practice",
+    "Breast Cancer Radiotherapy Bolus Innovations"
+]
+df = df[~df["TopicName"].isin(topics_to_remove)]
 
 topic_growth = (
     df.groupby(["TopicName", "Year"])
