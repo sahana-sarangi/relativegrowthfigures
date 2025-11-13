@@ -83,11 +83,11 @@ df["RelativeGrowthRate"] = df["RelativeGrowthRate"].fillna(0.0)
 
 min_growth = df["RelativeGrowthRate"].min()
 max_growth = df["RelativeGrowthRate"].max()
+median_growth = df["RelativeGrowthRate"].median()
 
-purple_center = -0.10
 purple_range = 0.02
-purple_min = purple_center - purple_range / 2
-purple_max = purple_center + purple_range / 2
+purple_min = median_growth - purple_range / 2
+purple_max = median_growth + purple_range / 2
 
 color_scale = alt.Scale(
     domain=[min_growth, purple_min, purple_max, max_growth],
