@@ -81,25 +81,17 @@ yearly_growth = (
 df = df.merge(yearly_growth, on="TopicName", how="left")
 df["RelativeGrowthRate"] = df["RelativeGrowthRate"].fillna(0.0)
 
-max_abs_growth = float(np.abs(df["RelativeGrowthRate"]).max())
-if max_abs_growth == 0 or np.isclose(max_abs_growth, 0.0):
-    max_abs_growth = 1e-6
+min_growth = df["RelativeGrowthRate"].min()
+max_growth = df["RelativeGrowthRate"].max()
+
+purple_center = -0.10
+purple_range = 0.02
+purple_min = purple_center - purple_range / 2
+purple_max = purple_center + purple_range / 2
 
 color_scale = alt.Scale(
-    domain=[
-        -max_abs_growth,
-        -0.12 * max_abs_growth,
-        -0.10 * max_abs_growth,
-        -0.08 * max_abs_growth,
-        max_abs_growth
-    ],
-    range=[
-        "#4575b4",
-        "#762a83",
-        "#762a83",
-        "#762a83",
-        "#d73027"
-    ]
+    domain=[min_growth, purple_min, purple_max, max_growth],
+    range=["#4575b4", "#762a83", "#762a83", "#d73027"]
 )
 
 final_chart = (
