@@ -52,7 +52,8 @@ df["TopicName"] = df["TopicName"].apply(lambda x: x if len(x) <= 50 else x[:47] 
 df = df[
     ~df["TopicName"].isin([
         "COVID-19 Impact on Radiation Oncology Practice",
-        "Breast Cancer Radiotherapy Bolus Innovations"
+        "Breast Cancer Radiotherapy Bolus Innovations",
+        "Radioprotective Effects of Gut Microbiota-Derived Metabolites"
     ])
 ]
 
@@ -84,8 +85,8 @@ if max_abs_growth == 0 or np.isclose(max_abs_growth, 0.0):
     max_abs_growth = 1e-6
 
 color_scale = alt.Scale(
-    domain=[-max_abs_growth, -0.3 * max_abs_growth, -0.05 * max_abs_growth, 0.05 * max_abs_growth, 0.3 * max_abs_growth, max_abs_growth],
-    range=["#4575b4", "#4575b4", "#762a83", "#762a83", "#d73027", "#d73027"]
+    domain=[-max_abs_growth, 0.0, max_abs_growth],
+    range=["#4575b4", "#762a83", "#d73027"]
 )
 
 final_chart = (
