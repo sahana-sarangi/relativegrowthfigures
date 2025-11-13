@@ -49,13 +49,11 @@ df = df.rename(columns={"GPT_Names": "TopicName"})
 df["TopicName"] = df["TopicName"].fillna("Topic " + df["Topic (Post Forced)"].astype(str))
 df["TopicName"] = df["TopicName"].apply(lambda x: x if len(x) <= 50 else x[:47] + "...")
 
-df = df[
-    ~df["TopicName"].isin([
-        "COVID-19 Impact on Radiation Oncology Practice",
-        "Breast Cancer Radiotherapy Bolus Innovations",
-        "Radioprotective Effects of Gut Microbiota-Derived Metabolites"
-    ])
-]
+df = df[~df["TopicName"].str.strip().str.lower().isin([
+    "covid-19 impact on radiation oncology practice",
+    "breast cancer radiotherapy bolus innovations",
+    "radioprotective effects of gut microbiota-derived metabolites"
+])]
 
 topic_growth = (
     df.groupby(["TopicName", "Year"])
