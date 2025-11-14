@@ -1,4 +1,4 @@
-
+'''
 import pandas as pd
 import numpy as np
 import altair as alt
@@ -219,13 +219,13 @@ df["RelativeGrowthRate"] = df["RelativeGrowthRate"].fillna(0.0)
 min_growth = df["RelativeGrowthRate"].min()
 max_growth = df["RelativeGrowthRate"].max()
 
-purple_center = -0.15
+purple_center = 0.05
 purple_range = 0.02
 purple_min = purple_center - purple_range / 2
 purple_max = purple_center + purple_range / 2
 
 color_scale = alt.Scale(
-    domain=[min_growth, purple_min, purple_max, max_growth],
+    domain=[-0.2, purple_min, purple_max, max_growth],
     range=["#4575b4", "#762a83", "#762a83", "#d73027"]
 )
 
@@ -265,4 +265,3 @@ final_chart = (
 
 st.title("Year To Year Relative")
 st.altair_chart(final_chart, use_container_width=True)
-'''
