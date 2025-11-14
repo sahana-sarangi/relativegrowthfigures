@@ -149,8 +149,8 @@ def add_leading_zeroes(x):
     return "{:02d}".format(int(x))
 
 astro_url = "https://drive.google.com/uc?export=download&id=1hmZY1_fJ157l9VVV62ewg6NDCOU2WfUp"
-tsne_url = "https://drive.google.com/uc?export=download&id=1hWBkhr2iQQm8hP3oa8kB_5Org40MND1s"
-names_url = "https://drive.google.com/uc?export=download&id=1_SxyudGo4_zOa-pWvd3feXJjK_cELCYz"
+tsne_url = "https://drive.google.com/uc?export:download&id=1hWBkhr2iQQm8hP3oa8kB_5Org40MND1s"
+names_url = "https://drive.google.com/uc?export:download&id=1_SxyudGo4_zOa-pWvd3feXJjK_cELCYz"
 
 data = pd.read_csv(astro_url, index_col=0)
 data['years'] = data['years'].fillna(0)
@@ -217,6 +217,11 @@ yearly_growth = (
 df = df.merge(yearly_growth, on="TopicName", how="left")
 df["RelativeGrowthRate"] = df["RelativeGrowthRate"].fillna(0.0)
 
+min_tsne_x = df["TSNE-x"].min()
+max_tsne_x = df["TSNE-x"].max()
+min_tsne_y = df["TSNE-y"].min()
+max_tsne_y = df["TSNE-y"].max()
+
 min_growth = df["RelativeGrowthRate"].min()
 max_growth = df["RelativeGrowthRate"].max()
 
@@ -230,56 +235,58 @@ color_scale = alt.Scale(
     range=["#4575b4", "#762a83", "#762a83", "#d73027"]
 )
 
+st.title("Year To Year Relative Growth")
+
 topic_list = df["TopicName"].unique().tolist()
 topic_list.sort()
-topic_list.insert(0, "All Topics")
 
-st.title("Year To Year Relative Growth")
-st.markdown("### Select a Topic to Filter the t-SNE Chart:")
-
-selected_topic = st.selectbox(
-    'Topic Name',
-    topic_list,
-    index=0
+dropdown = alt.selection_point(
+    fields=['TopicName'],
+    name="TopicSelector",
+    bind=alt.binding_select(options=['All Topics'] + topic_list, name='Select Topic: '),
+    init={'TopicName': 'All Topics'} 
 )
 
-if selected_topic == "All Topics":
-    filtered_df = df
-else:
-    filtered_df = df[df["TopicName"] == selected_topic]
+base = alt.Chart(df).properties(width=700, height=1000)
 
-final_chart = (
-    alt.Chart(filtered_df)
-    .mark_circle(size=25, opacity=0.9)
-    .encode(
-        x=alt.X("TSNE-x:Q", title="t-SNE x"),
-        y=alt.Y("TSNE-y:Q", title="t-SNE y"),
-        color=alt.Color(
-            "RelativeGrowthRate:Q",
-            scale=color_scale,
-            title="Avg Year to Year Growth (% per year)",
-            legend=alt.Legend(
-                orient="right",
-                titleFontSize=13,
-                labelFontSize=11,
-                labelLimit=250,
-                format=".1%",
-                gradientLength=200,
-                direction="vertical",
-                gradientThickness=20
-            )
-        ),
-        tooltip=[
-            alt.Tooltip("AbstractTitle:N", title="Abstract Title"),
-            alt.Tooltip("TopicName:N", title="Topic Name"),
-            alt.Tooltip("RelativeGrowthRate:Q", title="Avg. Year-to-Year Growth", format=".2%"),
-            alt.Tooltip("Year:Q", title="Year")
-        ],
-    )
-    .properties(width=700, height=1000)
-    .configure_title(fontSize=18, anchor="start")
-    .configure_axis(labelFontSize=12, titleFontSize=14, grid=True)
-    .configure_view(strokeWidth=0)
-)
+topic_filter = alt.datum.TopicName == dropdown.TopicSelector
+
+final_chart = base.mark_circle(size=25, opacity=0.9).encode(
+    x=alt.X(
+        "TSNE-x:Q", 
+        title="t-SNE x", 
+        scale=alt.Scale(domain=(min_tsne_x, max_tsne_x)) 
+    ),
+    y=alt.Y(
+        "TSNE-y:Q", 
+        title="t-SNE y", 
+        scale=alt.Scale(domain=(min_tsne_y, max_tsne_y))
+    ),
+    color=alt.Color(
+        "RelativeGrowthRate:Q",
+        scale=color_scale,
+        title="Avg Year to Year Growth (% per year)",
+        legend=alt.Legend(
+            orient="right",
+            titleFontSize=13,
+            labelFontSize=11,
+            labelLimit=250,
+            format=".1%",
+            gradientLength=200,
+            direction="vertical",
+            gradientThickness=20
+        )
+    ),
+    tooltip=[
+        alt.Tooltip("AbstractTitle:N", title="Abstract Title"),
+        alt.Tooltip("TopicName:N", title="Topic Name"),
+        alt.Tooltip("RelativeGrowthRate:Q", title="Avg. Year-to-Year Growth", format=".2%"),
+        alt.Tooltip("Year:Q", title="Year")
+    ],
+).add_params(
+    dropdown
+).transform_filter(
+    topic_filter | alt.FieldOneOfPredicate(dropdown.TopicSelector, ['All Topics'])
+).configure_title(fontSize=18, anchor="start").configure_axis(labelFontSize=12, titleFontSize=14, grid=True).configure_view(strokeWidth=0)
 
 st.altair_chart(final_chart, use_container_width=True)
