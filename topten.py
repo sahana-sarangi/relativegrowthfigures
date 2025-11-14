@@ -421,7 +421,6 @@ base = alt.Chart(plot_melt).encode(
         sort=ordered_topics,
         axis=alt.Axis(labelAngle=-40, title="Topic Name")
     ),
-    xOffset="GrowthType:N",
     color=alt.Color(
         "GrowthType:N",
         legend=alt.Legend(title="Growth Type"),
@@ -447,6 +446,8 @@ bars_abs = base.transform_filter(
         axis=alt.Axis(title="Absolute Growth (Δ abstracts)"),
         scale=alt.Scale(domain=[-abs_max, abs_max]) 
     ),
+
+    xOffset=alt.XOffset("GrowthType:N"),
     tooltip=[
         alt.Tooltip("TopicName:N", title="Topic"),
         alt.Tooltip("Value:Q", title="Absolute Growth", format=",.1f")
@@ -461,6 +462,8 @@ bars_rel = base.transform_filter(
         axis=alt.Axis(title="Relative Growth (Avg Annual % Change)", orient="right", format=".0%"),
         scale=alt.Scale(domain=[-rel_max, rel_max])
     ),
+
+    xOffset=alt.XOffset("GrowthType:N"),
     tooltip=[
         alt.Tooltip("TopicName:N", title="Topic"),
         alt.Tooltip("Value:Q", title="Relative Growth (Avg Annual)", format=".1%")
@@ -474,4 +477,3 @@ final_chart = (
 )
 
 st.altair_chart(final_chart, use_container_width=True)
-
