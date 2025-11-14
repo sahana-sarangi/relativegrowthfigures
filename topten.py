@@ -226,39 +226,33 @@ plot_melt = plot_df.melt(
     value_name="Value"
 )
 
-max_abs = plot_df["AbsoluteGrowth"].abs().max()
-max_rel = plot_df["RelativeGrowthRate"].abs().max()
-
 chart = alt.Chart(plot_melt).mark_bar().encode(
-    x=alt.X('TopicName:N', sort=None, axis=alt.Axis(labelAngle=-40)),
-    y=alt.Y(
-        'Value:Q',
-        title='Absolute Growth (Δ abstracts)',
-        scale=alt.Scale(domain=[-max_abs, max_abs])
-    ),
+    x=alt.X('TopicName:N', axis=alt.Axis(labelAngle=-40)),
+    y=alt.Y('Value:Q'),
     color=alt.Color('GrowthType:N', scale=alt.Scale(
         domain=['AbsoluteGrowth', 'RelativeGrowthRate'],
         range=['#4C78A8', '#54A24B']
     )),
-    column=alt.Column('GrowthType:N', header=None)
-)
-
-bars_abs = alt.Chart(plot_melt[plot_melt["GrowthType"]=="AbsoluteGrowth"]).mark_bar(size=15).encode(
-    x=alt.X('TopicName:N', sort=None, axis=None),
-    y=alt.Y('Value:Q', title='Absolute Growth (Δ abstracts)', scale=alt.Scale(zero=True)),
-    color=alt.value('#4C78A8')
-)
-
-bars_rel = alt.Chart(plot_melt[plot_melt["GrowthType"]=="RelativeGrowthRate"]).mark_bar(size=15).encode(
-    x=alt.X('TopicName:N', sort=None, axis=None),
-    y=alt.Y('Value:Q', title='Relative Growth (Avg % per year)', scale=alt.Scale(zero=True)),
-    color=alt.value('#54A24B')
-)
-
-final_chart = alt.layer(bars_abs, bars_rel).resolve_scale(y='independent').properties(
+    xOffset='GrowthType:N',
+    tooltip=[
+        alt.Tooltip('TopicName:N', title='Topic'),
+        alt.Tooltip('GrowthType:N', title='Type'),
+        alt.Tooltip('Value:Q', title='Value', format=".2f")
+    ]
+).properties(
     width=900,
     height=500,
     title='Top 10 Topics with Highest Increase and Decrease in Abstract Counts'
 )
+
+bars_abs = chart.transform_filter(alt.datum.GrowthType == 'AbsoluteGrowth').encode(
+    y=alt.Y('Value:Q', title='Absolute Growth (Δ abstracts)', scale=alt.Scale(zero=True))
+)
+
+bars_rel = chart.transform_filter(alt.datum.GrowthType == 'RelativeGrowthRate').encode(
+    y=alt.Y('Value:Q', title='Relative Growth (Avg % per year)', scale=alt.Scale(zero=True))
+)
+
+final_chart = alt.layer(bars_abs, bars_rel).resolve_scale(y='independent')
 
 st.altair_chart(final_chart, use_container_width=True)
