@@ -128,7 +128,7 @@ final_chart = (
 
 st.altair_chart(final_chart, use_container_width=True)
 '''
-'''
+
 also ok
 import pandas as pd
 import numpy as np
@@ -475,3 +475,4 @@ final_chart = (
 )
 
 st.altair_chart(final_chart, use_container_width=True)
+'''
