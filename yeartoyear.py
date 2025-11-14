@@ -1,4 +1,5 @@
 '''
+
 import pandas as pd
 import numpy as np
 import altair as alt
@@ -84,14 +85,14 @@ df["RelativeGrowthRate"] = df["RelativeGrowthRate"].fillna(0.0)
 
 min_growth = df["RelativeGrowthRate"].min()
 max_growth = df["RelativeGrowthRate"].max()
-mid_growth = (min_growth + max_growth) / 2
 
+purple_center = 0.05
 purple_range = 0.02
-purple_min = mid_growth - purple_range / 2
-purple_max = mid_growth + purple_range / 2
+purple_min = purple_center - purple_range / 2
+purple_max = purple_center + purple_range / 2
 
 color_scale = alt.Scale(
-    domain=[min_growth, purple_min, purple_max, max_growth],
+    domain=[-0.2, purple_min, purple_max, max_growth],
     range=["#4575b4", "#762a83", "#762a83", "#d73027"]
 )
 
@@ -229,8 +230,26 @@ color_scale = alt.Scale(
     range=["#4575b4", "#762a83", "#762a83", "#d73027"]
 )
 
+topic_list = df["TopicName"].unique().tolist()
+topic_list.sort()
+topic_list.insert(0, "All Topics")
+
+st.title("Year To Year Relative Growth")
+st.markdown("### Select a Topic to Filter the t-SNE Chart:")
+
+selected_topic = st.selectbox(
+    'Topic Name',
+    topic_list,
+    index=0
+)
+
+if selected_topic == "All Topics":
+    filtered_df = df
+else:
+    filtered_df = df[df["TopicName"] == selected_topic]
+
 final_chart = (
-    alt.Chart(df)
+    alt.Chart(filtered_df)
     .mark_circle(size=25, opacity=0.9)
     .encode(
         x=alt.X("TSNE-x:Q", title="t-SNE x"),
@@ -263,5 +282,4 @@ final_chart = (
     .configure_view(strokeWidth=0)
 )
 
-st.title("Year To Year Relative")
 st.altair_chart(final_chart, use_container_width=True)
