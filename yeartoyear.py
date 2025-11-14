@@ -398,54 +398,59 @@ st.title("Year To Year Relative Growth")
 
 topic_list = df["TopicName"].unique().tolist()
 topic_list.sort()
+topic_list.insert(0, "All Topics")
 
-dropdown = alt.selection_single(
-    fields=['TopicName'],
-    name="TopicSelector",
-    bind=alt.binding_select(options=['All Topics'] + topic_list, name='Select Topic: '),
-    init={'TopicName': 'All Topics'} 
+selected_topic = st.selectbox(
+    'Select Topic to Filter Chart:',
+    topic_list,
+    index=0
 )
 
-base = alt.Chart(df).properties(width=700, height=1000)
+if selected_topic == "All Topics":
+    filtered_df = df
+else:
+    filtered_df = df[df["TopicName"] == selected_topic]
 
-topic_filter = alt.datum.TopicName == dropdown.TopicSelector
-
-final_chart = base.mark_circle(size=25, opacity=0.9).encode(
-    x=alt.X(
-        "TSNE-x:Q", 
-        title="t-SNE x", 
-        scale=alt.Scale(domain=(min_tsne_x, max_tsne_x)) 
-    ),
-    y=alt.Y(
-        "TSNE-y:Q", 
-        title="t-SNE y", 
-        scale=alt.Scale(domain=(min_tsne_y, max_tsne_y))
-    ),
-    color=alt.Color(
-        "RelativeGrowthRate:Q",
-        scale=color_scale,
-        title="Avg Year to Year Growth (% per year)",
-        legend=alt.Legend(
-            orient="right",
-            titleFontSize=13,
-            labelFontSize=11,
-            labelLimit=250,
-            format=".1%",
-            gradientLength=200,
-            direction="vertical",
-            gradientThickness=20
-        )
-    ),
-    tooltip=[
-        alt.Tooltip("AbstractTitle:N", title="Abstract Title"),
-        alt.Tooltip("TopicName:N", title="Topic Name"),
-        alt.Tooltip("RelativeGrowthRate:Q", title="Avg. Year-to-Year Growth", format=".2%"),
-        alt.Tooltip("Year:Q", title="Year")
-    ],
-).add_selection(
-    dropdown
-).transform_filter(
-    topic_filter | alt.FieldOneOfPredicate(dropdown.TopicSelector, ['All Topics'])
-).configure_title(fontSize=18, anchor="start").configure_axis(labelFontSize=12, titleFontSize=14, grid=True).configure_view(strokeWidth=0)
+final_chart = (
+    alt.Chart(filtered_df)
+    .mark_circle(size=25, opacity=0.9)
+    .encode(
+        x=alt.X(
+            "TSNE-x:Q", 
+            title="t-SNE x", 
+            scale=alt.Scale(domain=(min_tsne_x, max_tsne_x)) 
+        ),
+        y=alt.Y(
+            "TSNE-y:Q", 
+            title="t-SNE y", 
+            scale=alt.Scale(domain=(min_tsne_y, max_tsne_y))
+        ),
+        color=alt.Color(
+            "RelativeGrowthRate:Q",
+            scale=color_scale,
+            title="Avg Year to Year Growth (% per year)",
+            legend=alt.Legend(
+                orient="right",
+                titleFontSize=13,
+                labelFontSize=11,
+                labelLimit=250,
+                format=".1%",
+                gradientLength=200,
+                direction="vertical",
+                gradientThickness=20
+            )
+        ),
+        tooltip=[
+            alt.Tooltip("AbstractTitle:N", title="Abstract Title"),
+            alt.Tooltip("TopicName:N", title="Topic Name"),
+            alt.Tooltip("RelativeGrowthRate:Q", title="Avg. Year-to-Year Growth", format=".2%"),
+            alt.Tooltip("Year:Q", title="Year")
+        ],
+    )
+    .properties(width=700, height=1000)
+    .configure_title(fontSize=18, anchor="start")
+    .configure_axis(labelFontSize=12, titleFontSize=14, grid=True)
+    .configure_view(strokeWidth=0)
+)
 
 st.altair_chart(final_chart, use_container_width=True)
