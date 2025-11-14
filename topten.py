@@ -217,34 +217,37 @@ top_dec = growth.nsmallest(10, "AbsoluteGrowth")
 plot_df = pd.concat([top_inc, top_dec], ignore_index=True)
 plot_df = plot_df.sort_values("AbsoluteGrowth", ascending=False)
 
-melted = plot_df.melt(
-    id_vars=["TopicName"],
-    value_vars=["AbsoluteGrowth", "RelativeGrowthRate"],
-    var_name="Metric",
-    value_name="Value"
-)
-
-melted["Metric"] = melted["Metric"].replace({
-    "AbsoluteGrowth": "Absolute Growth",
-    "RelativeGrowthRate": "Relative Growth"
-})
+rel_scale_factor = plot_df["AbsoluteGrowth"].max() / plot_df["RelativeGrowthRate"].max()
+plot_df["RelativeGrowthScaled"] = plot_df["RelativeGrowthRate"] * rel_scale_factor
 
 st.title("Absolute Growth & Relative Growth of Top Topics")
 
-chart = alt.Chart(melted).mark_bar().encode(
+abs_bar = alt.Chart(plot_df).mark_bar(color="#4C78A8").encode(
     x=alt.X("TopicName:N", sort=None, axis=alt.Axis(labelAngle=-40)),
-    y=alt.Y("Value:Q", axis=alt.Axis(title="")),
-    color=alt.Color("Metric:N", scale=alt.Scale(range=["#4C78A8", "#54A24B"])),
+    y=alt.Y("AbsoluteGrowth:Q", axis=alt.Axis(title="Absolute Growth (Δ abstracts)")),
     tooltip=[
         alt.Tooltip("TopicName:N", title="Topic"),
-        alt.Tooltip("Metric:N", title="Metric"),
-        alt.Tooltip("Value:Q", title="Value", format=".2%" if melted["Metric"].iloc[0]=="Relative Growth" else ",")
-    ],
-    column=alt.Column("Metric:N", spacing=20)
+        alt.Tooltip("AbsoluteGrowth:Q", title="Absolute Growth", format=",")
+    ]
+)
+
+rel_bar = alt.Chart(plot_df).mark_bar(color="#54A24B").encode(
+    x=alt.X("TopicName:N", sort=None),
+    y=alt.Y("RelativeGrowthScaled:Q", axis=alt.Axis(title="Relative Growth (Avg % per year)", orient="right", format=".0%")),
+    tooltip=[
+        alt.Tooltip("TopicName:N", title="Topic"),
+        alt.Tooltip("RelativeGrowthRate:Q", title="Relative Growth", format=".2%")
+    ]
+)
+
+final_chart = alt.layer(
+    abs_bar, rel_bar
+).resolve_scale(
+    y="independent"
 ).properties(
-    width=450,
+    width=900,
     height=500,
     title="Top 10 Topics with Highest Increase and Decrease in Abstract Counts"
 )
 
-st.altair_chart(chart, use_container_width=True)
+st.altair_chart(final_chart, use_container_width=True)
