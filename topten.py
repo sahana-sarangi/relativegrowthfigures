@@ -217,50 +217,34 @@ top_dec = growth.nsmallest(10, "AbsoluteGrowth")
 plot_df = pd.concat([top_inc, top_dec], ignore_index=True)
 plot_df = plot_df.sort_values("AbsoluteGrowth", ascending=False)
 
-abs_min = plot_df["AbsoluteGrowth"].min()
-abs_max = plot_df["AbsoluteGrowth"].max()
-rel_min = plot_df["RelativeGrowthRate"].min()
-rel_max = plot_df["RelativeGrowthRate"].max()
+melted = plot_df.melt(
+    id_vars=["TopicName"],
+    value_vars=["AbsoluteGrowth", "RelativeGrowthRate"],
+    var_name="Metric",
+    value_name="Value"
+)
 
-rel_scale_factor = (abs_max - abs_min) / (rel_max - rel_min)
-plot_df["RelativeGrowthScaled"] = plot_df["RelativeGrowthRate"] * rel_scale_factor
+melted["Metric"] = melted["Metric"].replace({
+    "AbsoluteGrowth": "Absolute Growth",
+    "RelativeGrowthRate": "Relative Growth"
+})
 
 st.title("Absolute Growth & Relative Growth of Top Topics")
 
-base = alt.Chart(plot_df).encode(
+chart = alt.Chart(melted).mark_bar().encode(
     x=alt.X("TopicName:N", sort=None, axis=alt.Axis(labelAngle=-40)),
+    y=alt.Y("Value:Q", axis=alt.Axis(title="")),
+    color=alt.Color("Metric:N", scale=alt.Scale(range=["#4C78A8", "#54A24B"])),
     tooltip=[
         alt.Tooltip("TopicName:N", title="Topic"),
-        alt.Tooltip("AbsoluteGrowth:Q", title="Absolute Growth", format=","),
-        alt.Tooltip("RelativeGrowthRate:Q", title="Relative Growth", format=".2%")
-    ]
-)
-
-bars = base.mark_bar(color="#4C78A8", opacity=0.85).encode(
-    y=alt.Y("AbsoluteGrowth:Q", axis=alt.Axis(title="Absolute Growth (Δ abstracts)"))
-)
-
-line = base.mark_line(
-    color="#54A24B",
-    strokeWidth=2,
-    point=alt.OverlayMarkDef(filled=True, size=50)
-).encode(
-    y=alt.Y(
-        "RelativeGrowthScaled:Q",
-        axis=alt.Axis(
-            title="Relative Growth (Avg % per year)",
-            orient="right",
-            format=".0%",
-            tickCount=5,
-            labelExpr="datum.value / {}".format(rel_scale_factor)
-        )
-    )
-)
-
-final_chart = alt.layer(bars, line).properties(
-    width=900,
+        alt.Tooltip("Metric:N", title="Metric"),
+        alt.Tooltip("Value:Q", title="Value", format=".2%" if melted["Metric"].iloc[0]=="Relative Growth" else ",")
+    ],
+    column=alt.Column("Metric:N", spacing=20)
+).properties(
+    width=450,
     height=500,
     title="Top 10 Topics with Highest Increase and Decrease in Abstract Counts"
 )
 
-st.altair_chart(final_chart, use_container_width=True)
+st.altair_chart(chart, use_container_width=True)
