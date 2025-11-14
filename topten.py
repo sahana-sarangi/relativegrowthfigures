@@ -415,7 +415,11 @@ ordered_topics = plot_df["TopicName"].tolist()
 abs_max = plot_df["AbsoluteGrowth"].abs().max()
 rel_max = plot_df["RelativeGrowthRate"].abs().max()
 
-base = alt.Chart(plot_melt).encode(
+base = alt.Chart(plot_melt).properties(
+    title="Absolute & Relative Growth for Topics with Greatest Increase and Decline"
+)
+
+common_encodings = dict(
     x=alt.X(
         "TopicName:N",
         sort=ordered_topics,
@@ -434,41 +438,39 @@ base = alt.Chart(plot_melt).encode(
         alt.Tooltip("GrowthType:N", title="Type"),
         alt.Tooltip("Value:Q", title="Value", format=".1f")
     ]
-).properties(
-    title="Absolute & Relative Growth for Topics with Greatest Increase and Decline"
 )
 
-bars_abs = base.transform_filter(
-    alt.datum.GrowthType == "AbsoluteGrowth"
-).mark_bar().encode(
+bars_abs = base.encode(
+    **common_encodings,
     y=alt.Y(
         "Value:Q",
         axis=alt.Axis(title="Absolute Growth (Δ abstracts)"),
         scale=alt.Scale(domain=[-abs_max, abs_max]) 
     ),
-
     xOffset=alt.XOffset("GrowthType:N"),
     tooltip=[
         alt.Tooltip("TopicName:N", title="Topic"),
         alt.Tooltip("Value:Q", title="Absolute Growth", format=",.1f")
     ]
-)
+).transform_filter(
+    alt.datum.GrowthType == "AbsoluteGrowth"
+).mark_bar()
 
-bars_rel = base.transform_filter(
-    alt.datum.GrowthType == "RelativeGrowthRate"
-).mark_bar().encode(
+bars_rel = base.encode(
+    **common_encodings,
     y=alt.Y(
         "Value:Q",
         axis=alt.Axis(title="Relative Growth (Avg Annual % Change)", orient="right", format=".0%"),
         scale=alt.Scale(domain=[-rel_max, rel_max])
     ),
-
     xOffset=alt.XOffset("GrowthType:N"),
     tooltip=[
         alt.Tooltip("TopicName:N", title="Topic"),
         alt.Tooltip("Value:Q", title="Relative Growth (Avg Annual)", format=".1%")
     ]
-)
+).transform_filter(
+    alt.datum.GrowthType == "RelativeGrowthRate"
+).mark_bar()
 
 final_chart = (
     alt.layer(bars_abs, bars_rel)
