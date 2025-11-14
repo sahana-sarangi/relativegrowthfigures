@@ -1,4 +1,5 @@
-
+'''
+good code
 import pandas as pd
 import numpy as np
 import altair as alt
@@ -126,8 +127,8 @@ final_chart = (
 )
 
 st.altair_chart(final_chart, use_container_width=True)
-
 '''
+
 import pandas as pd
 import numpy as np
 import altair as alt
@@ -175,12 +176,8 @@ df = pd.merge(
 )
 
 df = df.rename(columns={"GPT_Names": "TopicName"})
-df["TopicName"] = df["TopicName"].fillna(
-    "Topic " + df["Topic (Post Forced)"].astype(str)
-)
-df["TopicName"] = df["TopicName"].apply(
-    lambda x: x if len(x) <= 50 else x[:47] + "..."
-)
+df["TopicName"] = df["TopicName"].fillna("Topic " + df["Topic (Post Forced)"].astype(str))
+df["TopicName"] = df["TopicName"].apply(lambda x: x if len(x) <= 50 else x[:47] + "...")
 
 topic_year = (
     df.groupby(["TopicName", "Year"])
@@ -226,34 +223,40 @@ plot_melt = plot_df.melt(
     value_name="Value"
 )
 
-chart = alt.Chart(plot_melt).mark_bar().encode(
-    x=alt.X('TopicName:N', axis=alt.Axis(labelAngle=-40)),
-    y=alt.Y('Value:Q'),
-    color=alt.Color('GrowthType:N', scale=alt.Scale(
-        domain=['AbsoluteGrowth', 'RelativeGrowthRate'],
-        range=['#4C78A8', '#54A24B']
+base = alt.Chart(plot_melt).encode(
+    x=alt.X("TopicName:N", axis=alt.Axis(labelAngle=-40)),
+    color=alt.Color("GrowthType:N", scale=alt.Scale(
+        domain=["AbsoluteGrowth", "RelativeGrowthRate"],
+        range=["#4C78A8", "#54A24B"]
     )),
-    xOffset='GrowthType:N',
+    xOffset="GrowthType:N",
     tooltip=[
-        alt.Tooltip('TopicName:N', title='Topic'),
-        alt.Tooltip('GrowthType:N', title='Type'),
-        alt.Tooltip('Value:Q', title='Value', format=".2f")
+        alt.Tooltip("TopicName:N", title="Topic"),
+        alt.Tooltip("GrowthType:N", title="Growth Type"),
+        alt.Tooltip("Value:Q", title="Value", format=".3f")
     ]
-).properties(
-    width=900,
-    height=500,
-    title='Top 10 Topics with Highest Increase and Decrease in Abstract Counts'
 )
 
-bars_abs = chart.transform_filter(alt.datum.GrowthType == 'AbsoluteGrowth').encode(
-    y=alt.Y('Value:Q', title='Absolute Growth (Δ abstracts)', scale=alt.Scale(zero=True))
+bars_abs = base.transform_filter(
+    alt.datum.GrowthType == "AbsoluteGrowth"
+).mark_bar().encode(
+    y=alt.Y("Value:Q", axis=alt.Axis(title="Absolute Growth (Δ abstracts)"), scale=alt.Scale(zero=True))
 )
 
-bars_rel = chart.transform_filter(alt.datum.GrowthType == 'RelativeGrowthRate').encode(
-    y=alt.Y('Value:Q', title='Relative Growth (Avg % per year)', scale=alt.Scale(zero=True))
+bars_rel = base.transform_filter(
+    alt.datum.GrowthType == "RelativeGrowthRate"
+).mark_bar().encode(
+    y=alt.Y("Value:Q", axis=alt.Axis(title="Relative Growth (Avg % per year)", orient="right"), scale=alt.Scale(zero=True))
 )
 
-final_chart = alt.layer(bars_abs, bars_rel).resolve_scale(y='independent')
+final_chart = (
+    alt.layer(bars_abs, bars_rel)
+    .resolve_scale(y="independent")
+    .properties(
+        width=900,
+        height=500,
+        title="Top 10 Topics with Highest Increase and Decrease in Abstract Counts"
+    )
+)
 
 st.altair_chart(final_chart, use_container_width=True)
-'''
