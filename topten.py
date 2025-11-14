@@ -1,4 +1,4 @@
-'''
+
 import pandas as pd
 import numpy as np
 import altair as alt
@@ -126,8 +126,8 @@ final_chart = (
 )
 
 st.altair_chart(final_chart, use_container_width=True)
-'''
 
+'''
 import pandas as pd
 import numpy as np
 import altair as alt
@@ -256,3 +256,4 @@ bars_rel = chart.transform_filter(alt.datum.GrowthType == 'RelativeGrowthRate').
 final_chart = alt.layer(bars_abs, bars_rel).resolve_scale(y='independent')
 
 st.altair_chart(final_chart, use_container_width=True)
+'''
