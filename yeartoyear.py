@@ -442,7 +442,7 @@ final_chart = base.mark_circle(size=25, opacity=0.9).encode(
         alt.Tooltip("RelativeGrowthRate:Q", title="Avg. Year-to-Year Growth", format=".2%"),
         alt.Tooltip("Year:Q", title="Year")
     ],
-).add_params(
+).add_selection(
     dropdown
 ).transform_filter(
     topic_filter | alt.FieldOneOfPredicate(dropdown.TopicSelector, ['All Topics'])
