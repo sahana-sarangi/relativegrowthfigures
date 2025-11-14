@@ -217,9 +217,6 @@ top_dec = growth.nsmallest(10, "AbsoluteGrowth")
 plot_df = pd.concat([top_inc, top_dec], ignore_index=True)
 plot_df = plot_df.sort_values("AbsoluteGrowth", ascending=False)
 
-rel_scale_factor = plot_df["AbsoluteGrowth"].max() / plot_df["RelativeGrowthRate"].max()
-plot_df["RelativeGrowthScaled"] = plot_df["RelativeGrowthRate"] * rel_scale_factor
-
 st.title("Absolute Growth & Relative Growth of Top Topics")
 
 abs_bar = alt.Chart(plot_df).mark_bar(color="#4C78A8").encode(
@@ -228,21 +225,21 @@ abs_bar = alt.Chart(plot_df).mark_bar(color="#4C78A8").encode(
     tooltip=[
         alt.Tooltip("TopicName:N", title="Topic"),
         alt.Tooltip("AbsoluteGrowth:Q", title="Absolute Growth", format=",")
-    ]
+    ],
+    xOffset=0
 )
 
 rel_bar = alt.Chart(plot_df).mark_bar(color="#54A24B").encode(
     x=alt.X("TopicName:N", sort=None),
-    y=alt.Y("RelativeGrowthScaled:Q", axis=alt.Axis(title="Relative Growth (Avg % per year)", orient="right", format=".0%")),
+    y=alt.Y("RelativeGrowthRate:Q", axis=alt.Axis(title="Relative Growth (Avg % per year)", orient="right", format=".0%")),
     tooltip=[
         alt.Tooltip("TopicName:N", title="Topic"),
         alt.Tooltip("RelativeGrowthRate:Q", title="Relative Growth", format=".2%")
-    ]
+    ],
+    xOffset=1
 )
 
-final_chart = alt.layer(
-    abs_bar, rel_bar
-).resolve_scale(
+final_chart = alt.layer(abs_bar, rel_bar).resolve_scale(
     y="independent"
 ).properties(
     width=900,
