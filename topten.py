@@ -141,6 +141,7 @@ def add_leading_zeroes(x):
         x = 0
     return "{:02d}".format(int(x))
 
+# Load data
 astro_url = "https://drive.google.com/uc?export=download&id=1hmZY1_fJ157l9VVV62ewg6NDCOU2WfUp"
 tsne_url = "https://drive.google.com/uc?export=download&id=1hWBkhr2iQQm8hP3oa8kB_5Org40MND1s"
 names_url = "https://drive.google.com/uc?export=download&id=1_SxyudGo4_zOa-pWvd3feXJjK_cELCYz"
@@ -219,39 +220,38 @@ plot_df = plot_df.sort_values("AbsoluteGrowth", ascending=False)
 
 st.title("Absolute & Relative Growth of Top Topics")
 
-plot_melt = plot_df.melt(
-    id_vars="TopicName",
-    value_vars=["AbsoluteGrowth", "RelativeGrowthRate"],
-    var_name="GrowthType",
-    value_name="Value"
-)
-
-plot_melt["Axis"] = plot_melt["GrowthType"].apply(
-    lambda x: "AbsoluteGrowth" if x == "AbsoluteGrowth" else "RelativeGrowthRate"
-)
-
-chart = alt.Chart(plot_melt).mark_bar().encode(
+base = alt.Chart(plot_df).encode(
     x=alt.X("TopicName:N", sort=None, axis=alt.Axis(labelAngle=-40)),
-    y=alt.Y(
-        "Value:Q",
-        axis=alt.Axis(title="Absolute Growth (Δ abstracts)", orient="left"),
-        scale=alt.Scale(zero=True)
-    ),
-    color=alt.Color("GrowthType:N", scale=alt.Scale(
-        domain=["AbsoluteGrowth", "RelativeGrowthRate"],
-        range=["#4C78A8", "#54A24B"]
-    )),
-    column=alt.Column(
-        "Axis:N",
-        header=alt.Header(title=None, labelOrient="bottom")
-    ),
     tooltip=[
         alt.Tooltip("TopicName:N", title="Topic"),
-        alt.Tooltip("GrowthType:N", title="Type"),
-        alt.Tooltip("Value:Q", title="Value", format=".2f")
+        alt.Tooltip("AbsoluteGrowth:Q", title="Absolute Growth", format=","),
+        alt.Tooltip("RelativeGrowthRate:Q", title="Relative Growth", format=".2%")
     ]
-).properties(width=300, height=500)
+)
 
-st.altair_chart(chart, use_container_width=True)
+bars_absolute = base.mark_bar(color="#4C78A8", size=15).encode(
+    y=alt.Y("AbsoluteGrowth:Q",
+            axis=alt.Axis(title="Absolute Growth (Δ abstracts)", orient="left"),
+            scale=alt.Scale(zero=True)),
+    x=alt.X("TopicName:N", sort=None)
+)
 
+bars_relative = base.mark_bar(color="#54A24B", size=15).encode(
+    y=alt.Y("RelativeGrowthRate:Q",
+            axis=alt.Axis(title="Relative Growth (Avg % per year)", orient="right", format=".0%"),
+            scale=alt.Scale(zero=True)),
+    x=alt.X("TopicName:N", sort=None),
+    xOffset=alt.value(15)
+)
 
+final_chart = alt.layer(
+    bars_absolute, bars_relative
+).resolve_scale(
+    y='independent'
+).properties(
+    width=900,
+    height=500,
+    title="Top 10 Topics with Highest Increase and Decrease in Abstract Counts"
+)
+
+st.altair_chart(final_chart, use_container_width=True)
