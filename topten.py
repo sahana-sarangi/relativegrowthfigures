@@ -3,7 +3,7 @@ import numpy as np
 import altair as alt
 import streamlit as st
 
-st.set_page_config(layout="wide", page_title="Absolute and Relative Growth")
+st.set_page_config(layout="wide", page_title="Absolute and Relative Growth Combined")
 
 astro_url = "https://drive.google.com/uc?export=download&id=1hmZY1_fJ157l9VVV62ewg6NDCOU2WfUp"
 tsne_url = "https://drive.google.com/uc?export=download&id=1aQ6ZEPjk6PP0JonYq5aVVSjP5i3zFz0F"
@@ -52,7 +52,7 @@ scale_abs = alt.Scale(domain=[abs_min, abs_max])
 scale_rel = alt.Scale(domain=[rel_min, rel_max])
 
 color_scale = alt.Scale(
-    domain=['Absolute Growth', 'Relative Growth, year to year'],
+    domain=['Absolute Growth', 'Relative Growth (%)'],
     range=['#4C78A8', '#E45756']
 )
 
@@ -86,7 +86,7 @@ chart = alt.layer(abs_bars, rel_line, rel_points).resolve_scale(
 ).properties(
     width=900,
     height=500,
-    title='Absolute and Relative Growth of Top Increasing and Decreasing'
+    title='Absolute vs Relative Growth of Top Increasing and Decreasing Topics'
 )
 
 st.altair_chart(chart, use_container_width=True)
