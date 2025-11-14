@@ -4,124 +4,89 @@ import altair as alt
 import streamlit as st
 
 st.set_page_config(layout="wide", page_title="Absolute and Relative Growth")
-alt.data_transformers.disable_max_rows()
-
-def add_leading_zeroes(x):
-    if pd.isna(x):
-        x = 0
-    return "{:02d}".format(int(x))
 
 astro_url = "https://drive.google.com/uc?export=download&id=1hmZY1_fJ157l9VVV62ewg6NDCOU2WfUp"
-tsne_url = "https://drive.google.com/uc?export=download&id=1hWBkhr2iQQm8hP3oa8kB_5Org40MND1s"
-names_url = "https://drive.google.com/uc?export=download&id=1_SxyudGo4_zOa-pWvd3feXJjK_cELCYz"
+tsne_url = "https://drive.google.com/uc?export=download&id=1aQ6ZEPjk6PP0JonYq5aVVSjP5i3zFz0F"
 
-data = pd.read_csv(astro_url, index_col=0)
-data["years"] = data["years"].fillna(0).astype(int)
-data = data.rename(columns={"years": "Year"})
+astro_df = pd.read_csv(astro_url)
+tsne_df = pd.read_csv(tsne_url)
 
-df = pd.read_csv(tsne_url, encoding="utf8")
-df = df.rename(columns={
-    "Topic Name (Post Forced)": "Cluster",
-    "x": "TSNE-x",
-    "y": "TSNE-y",
-    "title": "AbstractTitle",
-    "abstract": "Abstract"
+astro_df['Topic'] = astro_df['Topic'].astype(str)
+astro_df['1990'] = pd.to_numeric(astro_df['1990'], errors='coerce').fillna(0)
+astro_df['2020'] = pd.to_numeric(astro_df['2020'], errors='coerce').fillna(0)
+astro_df['Absolute Growth'] = astro_df['2020'] - astro_df['1990']
+astro_df['Relative Growth'] = np.where(astro_df['1990'] == 0, np.nan, astro_df['Absolute Growth'] / astro_df['1990'])
+
+top_abs_increase = astro_df.nlargest(10, 'Absolute Growth')
+top_abs_decrease = astro_df.nsmallest(10, 'Absolute Growth')
+subset_df = pd.concat([top_abs_increase, top_abs_decrease])
+
+subset_df = pd.melt(
+    subset_df,
+    id_vars=['Topic'],
+    value_vars=['Absolute Growth', 'Relative Growth'],
+    var_name='Metric',
+    value_name='Value'
+)
+
+subset_df['Metric'] = subset_df['Metric'].replace({
+    'Absolute Growth': 'Absolute Growth',
+    'Relative Growth': 'Relative Growth (%)'
 })
-df["Topic (Post Forced)"] = df["Topic (Post Forced)"].fillna(0).astype(int)
 
-df = pd.merge(df, data, on=["AbstractTitle"], suffixes=("_df", None))
-df = df.drop(columns=df.filter(regex="_df$").columns)
-df["Cluster"] = df["Topic (Post Forced)"].apply(add_leading_zeroes)
-
-bt60_names = pd.read_csv(names_url)
-bt60_names = bt60_names.rename(columns={"title": "AbstractTitle"})
-bt60_names["Topic (Post Forced)"] = bt60_names["Topic (Post Forced)"].fillna(0).astype(int)
-
-df = pd.merge(
-    df,
-    bt60_names[["AbstractTitle", "GPT_Names", "Topic (Post Forced)"]],
-    on=["AbstractTitle", "Topic (Post Forced)"],
-    how="left"
+subset_df['Value'] = subset_df.apply(
+    lambda row: row['Value'] * 100 if row['Metric'] == 'Relative Growth (%)' else row['Value'],
+    axis=1
 )
 
-df = df.rename(columns={"GPT_Names": "TopicName"})
-df["TopicName"] = df["TopicName"].fillna(
-    "Topic " + df["Topic (Post Forced)"].astype(str)
-)
-df["TopicName"] = df["TopicName"].apply(
-    lambda x: x if len(x) <= 50 else x[:47] + "..."
-)
+abs_min = subset_df[subset_df['Metric'] == 'Absolute Growth']['Value'].min()
+abs_max = subset_df[subset_df['Metric'] == 'Absolute Growth']['Value'].max()
 
-topic_year = (
-    df.groupby(["TopicName", "Year"])
-    .size()
-    .reset_index(name="AbstractsPerYear")
-)
+rel_min = subset_df[subset_df['Metric'] == 'Relative Growth (%)']['Value'].min()
+rel_max = subset_df[subset_df['Metric'] == 'Relative Growth (%)']['Value'].max()
 
-def calc_relative_growth(g):
-    g = g.sort_values("Year")
-    counts = g["AbstractsPerYear"].values
-    if len(counts) < 2:
-        return 0.0
-    pct_changes = (counts[1:] - counts[:-1]) / counts[:-1]
-    return np.mean(pct_changes)
+primary_zero_position = (0 - abs_min) / (abs_max - abs_min)
+relative_zero_value = rel_min + primary_zero_position * (rel_max - rel_min)
 
-relative = (
-    topic_year.groupby("TopicName")
-    .apply(calc_relative_growth)
-    .reset_index(name="RelativeGrowthRate")
+scale_abs = alt.Scale(domain=[abs_min, abs_max])
+scale_rel = alt.Scale(domain=[rel_min, rel_max])
+
+color_scale = alt.Scale(
+    domain=['Absolute Growth', 'Relative Growth, year to year'],
+    range=['#4C78A8', '#E45756']
 )
 
-absolute = (
-    topic_year.sort_values("Year")
-    .groupby("TopicName")
-    .apply(lambda g: g["AbstractsPerYear"].iloc[-1] - g["AbstractsPerYear"].iloc[0])
-    .reset_index(name="AbsoluteGrowth")
+base = alt.Chart(subset_df).encode(
+    x=alt.X('Topic:N', sort='-y', axis=alt.Axis(labelAngle=-40))
 )
 
-growth = absolute.merge(relative, on="TopicName", how="left")
-
-top_inc = growth.nlargest(10, "AbsoluteGrowth")
-top_dec = growth.nsmallest(10, "AbsoluteGrowth")
-
-plot_df = pd.concat([top_inc, top_dec], ignore_index=True)
-plot_df = plot_df.sort_values("AbsoluteGrowth", ascending=False)
-
-st.title("Absolute Growth & Relative Growth of Top 10 Topics")
-
-base = alt.Chart(plot_df).encode(
-    x=alt.X("TopicName:N", sort=None, axis=alt.Axis(labelAngle=-40)),
-    tooltip=[
-        alt.Tooltip("TopicName:N", title="Topic"),
-        alt.Tooltip("AbsoluteGrowth:Q", title="Absolute Growth", format=","),
-        alt.Tooltip("RelativeGrowthRate:Q", title="Relative Growth", format=".2%")
-    ]
+abs_bars = base.transform_filter(
+    alt.datum.Metric == 'Absolute Growth'
+).mark_bar().encode(
+    y=alt.Y('Value:Q', scale=scale_abs, axis=alt.Axis(title='Absolute Growth')),
+    color=alt.Color('Metric:N', scale=color_scale, legend=alt.Legend(title="Metric"))
 )
 
-bars = base.mark_bar(color="#4C78A8", opacity=0.85).encode(
-    y=alt.Y("AbsoluteGrowth:Q", axis=alt.Axis(title="Absolute Growth"))
+rel_line = base.transform_filter(
+    alt.datum.Metric == 'Relative Growth (%)'
+).mark_line(size=3).encode(
+    y=alt.Y('Value:Q', scale=scale_rel, axis=alt.Axis(title='Relative Growth (%)')),
+    color=alt.Color('Metric:N', scale=color_scale, legend=None)
 )
 
-line = base.mark_line(
-    color="#54A24B",
-    strokeWidth=2,
-    point=alt.OverlayMarkDef(filled=True, size=50)
-).encode(
-    y=alt.Y(
-        "RelativeGrowthRate:Q",
-        axis=alt.Axis(title="Relative Growth (Avg % per year)", orient="right", format=".0%"),
-        scale=alt.Scale(zero=False)
-    )
+rel_points = base.transform_filter(
+    alt.datum.Metric == 'Relative Growth (%)'
+).mark_point(size=60).encode(
+    y=alt.Y('Value:Q', scale=scale_rel),
+    color=alt.Color('Metric:N', scale=color_scale, legend=None)
 )
 
-final_chart = (
-    alt.layer(bars, line)
-    .resolve_scale(y="independent")
-    .properties(
-        width=900,
-        height=500,
-        title="Top 10 Topics with Largest Increase and Decrease"
-    )
+chart = alt.layer(abs_bars, rel_line, rel_points).resolve_scale(
+    y='independent'
+).properties(
+    width=900,
+    height=500,
+    title='Absolute and Relative Growth of Top Increasing and Decreasing'
 )
 
-st.altair_chart(final_chart, use_container_width=True)
+st.altair_chart(chart, use_container_width=True)
