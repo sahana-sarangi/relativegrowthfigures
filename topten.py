@@ -223,16 +223,25 @@ plot_melt = plot_df.melt(
     value_name="Value"
 )
 
+ordered_topics = plot_df["TopicName"].tolist()
+
 base = alt.Chart(plot_melt).encode(
-    x=alt.X("TopicName:N", axis=alt.Axis(labelAngle=-40)),
-    color=alt.Color("GrowthType:N", scale=alt.Scale(
-        domain=["AbsoluteGrowth", "RelativeGrowthRate"],
-        range=["#4C78A8", "#54A24B"]
-    )),
+    x=alt.X(
+        "TopicName:N",
+        sort=ordered_topics,
+        axis=alt.Axis(labelAngle=-40)
+    ),
+    color=alt.Color(
+        "GrowthType:N",
+        scale=alt.Scale(
+            domain=["AbsoluteGrowth", "RelativeGrowthRate"],
+            range=["#4C78A8", "#54A24B"]
+        )
+    ),
     xOffset="GrowthType:N",
     tooltip=[
         alt.Tooltip("TopicName:N", title="Topic"),
-        alt.Tooltip("GrowthType:N", title="Growth Type"),
+        alt.Tooltip("GrowthType:N", title="Type"),
         alt.Tooltip("Value:Q", title="Value", format=".3f")
     ]
 )
@@ -240,13 +249,21 @@ base = alt.Chart(plot_melt).encode(
 bars_abs = base.transform_filter(
     alt.datum.GrowthType == "AbsoluteGrowth"
 ).mark_bar().encode(
-    y=alt.Y("Value:Q", axis=alt.Axis(title="Absolute Growth (Δ abstracts)"), scale=alt.Scale(zero=True))
+    y=alt.Y(
+        "Value:Q",
+        axis=alt.Axis(title="Absolute Growth (Δ abstracts)"),
+        scale=alt.Scale(zero=True)
+    )
 )
 
 bars_rel = base.transform_filter(
     alt.datum.GrowthType == "RelativeGrowthRate"
 ).mark_bar().encode(
-    y=alt.Y("Value:Q", axis=alt.Axis(title="Relative Growth (Avg % per year)", orient="right"), scale=alt.Scale(zero=True))
+    y=alt.Y(
+        "Value:Q",
+        axis=alt.Axis(title="Relative Growth (Avg % per year)", orient="right"),
+        scale=alt.Scale(zero=True)
+    )
 )
 
 final_chart = (
@@ -255,7 +272,7 @@ final_chart = (
     .properties(
         width=900,
         height=500,
-        title="Top 10 Topics with Highest Increase and Decrease in Abstract Counts"
+        title="Absolute & Relative Growth for Topics with Greatest Increase and Decline"
     )
 )
 
