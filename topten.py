@@ -318,8 +318,10 @@ tsne_url = "https://drive.google.com/uc?export=download&id=1hWBkhr2iQQm8hP3oa8kB
 names_url = "https://drive.google.com/uc?export=download&id=1_SxyudGo4_zOa-pWvd3feXJjK_cELCYz"
 
 data = pd.read_csv(astro_url, index_col=0)
-data["years"] = data["years"].fillna(0).astype(int)
-data = data.rename(columns={"years": "Year"})
+# --- FIX APPLIED HERE ---
+data["Years"] = data["Years"].fillna(0).astype(int) 
+data = data.rename(columns={"Years": "Year"})
+# ------------------------
 
 df = pd.read_csv(tsne_url, encoding="utf8")
 df = df.rename(columns={
